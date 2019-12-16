@@ -1,0 +1,110 @@
+<html>
+	<head></head>
+	<body style="margin:0"></body>
+	<script src="husl.min.js"></script>
+	<script src="p5.min.js"></script>
+	<script>
+		// Helper function to convert HSLuv space to RGB
+		function fillHsluv(h, s, l) {
+			var rgb = hsluv.hsluvToRgb([h, s, l]);
+			fill(rgb[0] * 255, rgb[1] * 255, rgb[2] * 255);
+		}
+
+		function colorHsluv(x, y, z) {
+			var rgb = hsluv.hsluvToRgb([x, y, z]);
+
+			// Find greatest and smallest channel values
+			let cmin = Math.min(rgb[0], rgb[1], rgb[2]),
+				cmax = Math.max(rgb[0], rgb[1], rgb[2]),
+				delta = cmax - cmin,
+				h = 0;
+
+			// Calculate hue
+			// No difference
+			if (delta == 0) h = 0;
+			// Red is max
+			else if (cmax == rgb[0]) h = ((rgb[1] - rgb[2]) / delta) % 6;
+			// Green is max
+			else if (cmax == rgb[1]) h = (rgb[2] - rgb[0]) / delta + 2;
+			// Blue is max
+			else h = (rgb[0] - rgb[1]) / delta + 4;
+
+			h = Math.round(h * 60);
+
+			// Make negative hues positive behind 360°
+			if (h < 0) h += 360;
+
+			// Calculate lightness
+			l = (cmax + cmin) / 2;
+
+			// Calculate saturation
+			s = delta == 0 ? 0 : delta / (1 - Math.abs(2 * l - 1));
+
+			// Multiply l and s by 100
+			s = +(s * 100).toFixed(1);
+			l = +(l * 100).toFixed(1);
+
+			return (
+				"hsl ( " +
+				h.toFixed(0) +
+				", " +
+				s.toFixed(0) +
+				", " +
+				l.toFixed(0) +
+				" )"
+			);
+		}
+
+		function lightnessToLuminance(l) {
+			if (l <= 8) {
+				return (1.0 * l) / 903.2962962;
+			} else {
+				return 1.0 * Math.pow((l + 16) / 116, 3);
+			}
+		}
+
+		function contrastRatio(l1, l2) {
+			l1 = lightnessToLuminance(l1);
+			l2 = lightnessToLuminance(l2);
+			return (l1 + 0.05) / (l2 + 0.05);
+		}
+
+		// Setup Canvas
+		function setup() {
+			createCanvas(360, 640);
+
+			input = createInput();
+			input.position(20, height + 20);
+
+			button = createButton("submit");
+			button.position(input.x + input.width, height + 20);
+			button.mousePressed();
+		}
+
+		function draw() {
+			// Brand Colors
+			// Purple		: hsl(275.7, 39.2, 55.5) 50.19761037334173
+			// Sky			: hsl(197, 100, 62.5) 76.06161564707617
+			// Lemon		: hsl(50, 100, 53.9) 87.15704781003521
+			// Saffron	: hsl(32.6, 100, 60) 74.37064379780993
+			// Pink			: hsl(346.9, 100, 67.6) 61.68360605995288
+			// Charcoal	: hsl(0, 0, 28.6) 30.995851704342748
+
+			var boxh = height / 10;
+
+			for (var i = 0; i < 10; i++) {
+				const h = input.value();
+				var s = lerp(100, 90, i / 9 );
+				var l = lerp(24, 96, i / 9 );
+
+				noStroke();
+				fillHsluv(h, s, l);
+				rect(0, i * boxh, width, boxh);
+
+				textSize(boxh / 4);
+				fillHsluv(h, s, l/2);
+				text(l.toFixed(2) + ", " + (1 / contrastRatio(l, 100)).toFixed(2) + ", " + colorHsluv(h, s, l), 10, (0.6 + i) * boxh);
+			}
+		}
+	</script>
+</html>
